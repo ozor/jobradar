@@ -72,3 +72,5 @@ Every change goes through a pull request into `master`. Merging is always a huma
 ## Data sources
 
 Vacancies come from public job board APIs such as [Arbeitnow](https://arbeitnow.com/blog/job-board-api/) and [Remotive](https://remotive.com/remote-jobs/api). Every listing links back to its original posting, and each source's terms of use (attribution, request limits) are part of the feature specification.
+
+Status: Module 0 in progress
