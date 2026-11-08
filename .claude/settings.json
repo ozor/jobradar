@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env.local)",
+      "Read(./.env.*.local)",
+      "Read(./config/secrets/**)",
+      "Edit(./.idea/**)",
+      "Bash(git push:*)"
+    ]
+  }
+}
