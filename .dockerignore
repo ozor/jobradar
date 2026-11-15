@@ -1,0 +1,15 @@
+.git
+.idea
+.claude
+docs
+specs
+vendor
+var
+node_modules
+.env.local
+.env.*.local
+.phpunit.cache
+.php-cs-fixer.cache
+compose*.yaml
+docker/postgres
+docker/nginx
