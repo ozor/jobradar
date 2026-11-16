@@ -3,10 +3,14 @@ PHP     := $(DC) exec -T php
 CONSOLE := $(PHP) bin/console
 ARGS    ?=
 
-.PHONY: up test test-db cs cs-fix stan deptrac rector rector-fix
+.PHONY: up check test test-db cs cs-fix stan deptrac rector rector-fix
 
 up:
 	$(DC) up -d --wait
+
+# Quality gate: must pass before every PR. Prerequisites run left to right
+# (cheapest first) and stop at the first failure.
+check: cs stan deptrac test
 
 test: test-db
 	$(PHP) vendor/bin/phpunit --no-progress $(ARGS)
