@@ -5,6 +5,7 @@
 /.env.local.php
 /.env.*.local
 
+/.deptrac.cache
 /compose.override.yaml
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
