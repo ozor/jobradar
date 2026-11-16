@@ -3,7 +3,7 @@ PHP     := $(DC) exec -T php
 CONSOLE := $(PHP) bin/console
 ARGS    ?=
 
-.PHONY: up test test-db cs cs-fix
+.PHONY: up test test-db cs cs-fix stan
 
 up:
 	$(DC) up -d --wait
@@ -20,3 +20,7 @@ cs:
 
 cs-fix:
 	$(PHP) vendor/bin/php-cs-fixer fix --show-progress=none
+
+stan:
+	$(CONSOLE) cache:warmup --env=dev --quiet
+	$(PHP) vendor/bin/phpstan analyse --no-progress --memory-limit=1G
