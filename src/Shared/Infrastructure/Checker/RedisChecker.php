@@ -26,6 +26,10 @@ readonly class RedisChecker
                 'read_timeout' => 1,
             ]);
 
+            if (!$redis instanceof \Redis) {
+                throw new \LogicException(\sprintf('Unsupported Redis client "%s", ext-redis \Redis expected.', get_debug_type($redis)));
+            }
+
             return false !== $redis->ping()
                 ? HealthCheckDto::STATUS_OK
                 : HealthCheckDto::STATUS_FAIL;

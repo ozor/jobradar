@@ -19,7 +19,8 @@ readonly class PostgresChecker
     public function check(): string
     {
         try {
-            $check = '1' === (string) $this->postgres->fetchOne('SELECT 1');
+            $value = $this->postgres->fetchOne('SELECT 1');
+            $check = \is_scalar($value) && '1' === (string) $value;
 
             return $check ? HealthCheckDto::STATUS_OK : HealthCheckDto::STATUS_FAIL;
         } catch (\Throwable $e) {

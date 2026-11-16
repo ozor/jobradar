@@ -30,7 +30,7 @@ readonly class RabbitMQChecker
             $amqp = new \AMQPConnection([
                 'host' => $parts['host'],
                 'port' => $parts['port'] ?? (($parts['scheme'] ?? 'amqp') === 'amqps' ? 5671 : 5672),
-                'vhost' => isset($path[0]) ? rawurldecode($path[0]) : '/',
+                'vhost' => rawurldecode($path[0]),
                 'login' => rawurldecode($parts['user'] ?? 'guest'),
                 'password' => rawurldecode($parts['pass'] ?? 'guest'),
                 'connect_timeout' => 1,

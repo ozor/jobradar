@@ -17,6 +17,9 @@ class HealthCheckDto
     ) {
     }
 
+    /**
+     * @return array{status: string, checks: array{postgres: string, redis: string, rabbitmq: string}}
+     */
     public function toArray(): array
     {
         return [
