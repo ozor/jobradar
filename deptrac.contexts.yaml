@@ -1,0 +1,48 @@
+# Rule (a): bounded contexts are isolated from each other.
+# Ingestion, Enrichment, Matching and Delivery may depend only on
+# Shared/Contract and Shared/Kernel. Anything not allowed in the ruleset is a violation.
+# Vendor classes are not assigned to layers here, so this rule does not restrict them
+# (see deptrac.domain.yaml for that).
+deptrac:
+  paths:
+    - ./src
+
+  layers:
+    - name: Ingestion
+      collectors:
+        - { type: directory, value: src/Ingestion/.* }
+    - name: Enrichment
+      collectors:
+        - { type: directory, value: src/Enrichment/.* }
+    - name: Matching
+      collectors:
+        - { type: directory, value: src/Matching/.* }
+    - name: Delivery
+      collectors:
+        - { type: directory, value: src/Delivery/.* }
+    - name: SharedContract
+      collectors:
+        - { type: directory, value: src/Shared/Contract/.* }
+    - name: SharedKernel
+      collectors:
+        - { type: directory, value: src/Shared/Kernel/.* }
+    # Every other App\ class (Kernel, Schedule, Shared/Infrastructure, Shared/UI).
+    # Without this layer such classes would be "uncovered" and a context could
+    # depend on them silently.
+    - name: Platform
+      collectors:
+        - type: bool
+          must:
+            - { type: classNameRegex, value: '#^App\\#' }
+          must_not:
+            - { type: directory, value: src/(Ingestion|Enrichment|Matching|Delivery)/.* }
+            - { type: directory, value: src/Shared/(Contract|Kernel)/.* }
+
+  ruleset:
+    Ingestion: [SharedContract, SharedKernel]
+    Enrichment: [SharedContract, SharedKernel]
+    Matching: [SharedContract, SharedKernel]
+    Delivery: [SharedContract, SharedKernel]
+    SharedContract: [SharedKernel]
+    SharedKernel: ~
+    Platform: [Ingestion, Enrichment, Matching, Delivery, SharedContract, SharedKernel]

@@ -3,7 +3,7 @@ PHP     := $(DC) exec -T php
 CONSOLE := $(PHP) bin/console
 ARGS    ?=
 
-.PHONY: up test test-db cs cs-fix stan deptrac
+.PHONY: up test test-db cs cs-fix stan deptrac rector rector-fix
 
 up:
 	$(DC) up -d --wait
@@ -28,3 +28,11 @@ stan:
 deptrac:
 	$(PHP) vendor/bin/deptrac analyse --config-file=deptrac.contexts.yaml --cache-file=var/cache/deptrac.contexts.cache --no-progress
 	$(PHP) vendor/bin/deptrac analyse --config-file=deptrac.domain.yaml --cache-file=var/cache/deptrac.domain.cache --no-progress
+
+rector:
+	$(CONSOLE) cache:warmup --env=dev --quiet
+	$(PHP) vendor/bin/rector process --dry-run --no-progress-bar
+
+rector-fix:
+	$(CONSOLE) cache:warmup --env=dev --quiet
+	$(PHP) vendor/bin/rector process --no-progress-bar
