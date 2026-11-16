@@ -5,7 +5,6 @@
 /.env.local.php
 /.env.*.local
 
-/.phpunit.cache
 /.php-cs-fixer.cache
 /compose.override.yaml
 /config/secrets/prod/prod.decrypt.private.php
@@ -14,3 +13,7 @@
 /.idea/
 /.claude/settings.local.json
 
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
