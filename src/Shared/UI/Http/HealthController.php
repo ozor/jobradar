@@ -12,7 +12,7 @@ class HealthController extends AbstractController
 {
     #[Route('/health', name: 'health_check', methods: ['GET'])]
     public function get(
-        HealthChecker $healthChecker
+        HealthChecker $healthChecker,
     ): Response
     {
         $response = $healthChecker->check();
@@ -20,15 +20,9 @@ class HealthController extends AbstractController
             ? Response::HTTP_OK
             : Response::HTTP_SERVICE_UNAVAILABLE;
 
-        return $this->json($response, $code);
-    }
+        $jsonResponse = $this->json($response->toArray(), $code);
+        $jsonResponse->headers->set('Cache-Control', 'no-store');
 
-    #[Route('/health', name: 'health_check_post', methods: ['POST'])]
-    public function post(): Response
-    {
-        return $this->json(
-            ['error' => 'Service unavailable'],
-            Response::HTTP_SERVICE_UNAVAILABLE,
-        );
+        return $jsonResponse;
     }
 }
