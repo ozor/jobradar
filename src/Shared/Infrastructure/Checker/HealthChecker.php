@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Shared\Infrastructure\Checker;
 
 use App\Shared\Infrastructure\Dto\HealthCheckDto;
@@ -8,7 +10,7 @@ readonly class HealthChecker
 {
     public function __construct(
         private PostgresChecker $postgresChecker,
-        private RedisChecker    $redisChecker,
+        private RedisChecker $redisChecker,
         private RabbitMQChecker $rabbitMqChecker,
     ) {
     }

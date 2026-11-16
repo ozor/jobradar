@@ -1,18 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Shared\Infrastructure\Checker;
 
 use App\Shared\Infrastructure\Dto\HealthCheckDto;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Throwable;
 
 readonly class RedisChecker
 {
     public function __construct(
         #[Autowire('%env(REDIS_URL)%')]
-        private string          $redisDsn,
+        private string $redisDsn,
         private LoggerInterface $logger,
     ) {
     }
@@ -28,7 +29,7 @@ readonly class RedisChecker
             return false !== $redis->ping()
                 ? HealthCheckDto::STATUS_OK
                 : HealthCheckDto::STATUS_FAIL;
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $this->logger->warning('Health check failed', [
                 'service' => 'redis',
                 'exception' => $e,

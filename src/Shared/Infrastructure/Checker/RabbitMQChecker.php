@@ -1,19 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Shared\Infrastructure\Checker;
 
-use AMQPConnection;
 use App\Shared\Infrastructure\Dto\HealthCheckDto;
-use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Throwable;
 
 readonly class RabbitMQChecker
 {
     public function __construct(
         #[Autowire('%env(MESSENGER_TRANSPORT_DSN)%')]
-        private string          $rabbitDsn,
+        private string $rabbitDsn,
         private LoggerInterface $logger,
     ) {
     }
@@ -24,11 +23,11 @@ readonly class RabbitMQChecker
             $parts = parse_url($this->rabbitDsn);
 
             if (!is_array($parts) || !isset($parts['host'])) {
-                throw new InvalidArgumentException('Invalid RabbitMQ DSN');
+                throw new \InvalidArgumentException('Invalid RabbitMQ DSN');
             }
 
             $path = explode('/', trim($parts['path'] ?? '', '/'));
-            $amqp = new AMQPConnection([
+            $amqp = new \AMQPConnection([
                 'host' => $parts['host'],
                 'port' => $parts['port'] ?? (($parts['scheme'] ?? 'amqp') === 'amqps' ? 5671 : 5672),
                 'vhost' => isset($path[0]) ? rawurldecode($path[0]) : '/',
@@ -44,7 +43,7 @@ readonly class RabbitMQChecker
             return $amqp->isConnected()
                 ? HealthCheckDto::STATUS_OK
                 : HealthCheckDto::STATUS_FAIL;
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $this->logger->warning('Health check failed', [
                 'service' => 'rabbitmq',
                 'exception' => $e,

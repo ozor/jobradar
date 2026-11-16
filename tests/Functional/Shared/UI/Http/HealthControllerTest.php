@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Shared\UI\Http;
 
-use JsonException;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use const JSON_THROW_ON_ERROR;
 
 final class HealthControllerTest extends WebTestCase
 {
     /**
-     * @throws JsonException
+     * @throws \JsonException
      */
     public function testGetReturnsOkWithNestedChecks(): void
     {
@@ -25,7 +23,7 @@ final class HealthControllerTest extends WebTestCase
         self::assertIsString($cacheControl);
         self::assertStringContainsString('no-store', $cacheControl);
 
-        $data = json_decode((string) $client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        $data = json_decode((string) $client->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
         self::assertSame(
             [
                 'status' => 'ok',
