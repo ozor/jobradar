@@ -5,8 +5,7 @@
 /.env.local.php
 /.env.*.local
 
-/.phpunit.cache
-/.php-cs-fixer.cache
+/.deptrac.cache
 /compose.override.yaml
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
@@ -14,3 +13,12 @@
 /.idea/
 /.claude/settings.local.json
 
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+###> friendsofphp/php-cs-fixer ###
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+###< friendsofphp/php-cs-fixer ###

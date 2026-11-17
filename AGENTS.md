@@ -62,7 +62,7 @@ Three specifics worth spelling out, because they are easy to get wrong:
 
 ## Everyday workflow
 
-- - Everything runs in Docker. Start the stack with `docker compose up -d --wait`.
+- Everything runs in Docker. Start the stack with `docker compose up -d --wait`.
   Run commands inside the php container: `docker compose exec php bin/console ...`,
   `docker compose exec php composer ...`. Never use `symfony serve`, the Symfony CLI
   or a local PHP binary.
@@ -83,17 +83,44 @@ Three specifics worth spelling out, because they are easy to get wrong:
 
 ## Testing
 
-Install `symfony/test-pack` if it isn't already. Functional/HTTP tests extend
-`WebTestCase`; service-level tests extend `KernelTestCase`. Run
-`docker compose exec php vendor/bin/phpunit` (falls back to `vendor/bin/phpunit`). A feature isn't done
-until it has a test that exercises it the way a caller would, an HTTP request for
-a controller or a service call for a service, not just "it didn't throw."
+Run everything through the Makefile (it wraps `docker compose exec -T php`);
+start the stack first with `make up`.
 
-## Code style
+- `make test` runs PHPUnit. Pass extra arguments with `ARGS`:
+  `make test ARGS="--testsuite Functional"`, `make test ARGS="--filter HealthControllerTest"`.
+- `make test` first runs `make test-db`, which creates the `jobradar_test`
+  database if it is missing and applies migrations to it. Don't create it by hand.
+- Tests run against the real Postgres, Redis and RabbitMQ from `compose.yaml`.
+- Layout (one testsuite each in `phpunit.xml.dist`):
+  - `tests/Unit`: plain `TestCase`, no kernel, no I/O.
+  - `tests/Integration`: `KernelTestCase`, real services from the container.
+  - `tests/Functional`: `WebTestCase`, HTTP requests through the kernel.
+  Mirror the `src/` path, e.g. `src/Shared/UI/Http/HealthController.php` is tested in
+  `tests/Functional/Shared/UI/Http/HealthControllerTest.php`.
 
-Symfony's coding standard, the `@Symfony` php-cs-fixer ruleset (a PSR-12-derived
-superset). Run `docker compose exec php vendor/bin/php-cs-fixer fix` if `friendsofphp/php-cs-fixer` is
-installed; it isn't part of the skeleton by default.
+A feature isn't done until it has a test that exercises it the way a caller would,
+an HTTP request for a controller or a service call for a service, not just
+"it didn't throw."
+
+## Code style and quality gates
+
+`make check` runs `cs`, `stan`, `deptrac` and `test` in that order, stops at the
+first failure, and must pass before every PR (budget: under 60 seconds).
+
+- `make cs` / `make cs-fix`: PHP-CS-Fixer with `@PER-CS` + `@Symfony` and
+  `declare(strict_types=1)` required in every PHP file. Global classes, functions
+  and constants are written fully qualified (`\Throwable`, `\sprintf`), not imported.
+- `make stan`: PHPStan at level `max` with strict-rules and the Symfony and
+  Doctrine extensions. There is no baseline and `@phpstan-ignore` is not allowed:
+  fix the code. If the fix would change behaviour, stop and ask.
+- `make deptrac`: architecture rules, two configs:
+  - `deptrac.contexts.yaml`: Ingestion, Enrichment, Matching and Delivery must not
+    depend on each other, only on `Shared/Contract` and `Shared/Kernel`.
+  - `deptrac.domain.yaml`: no `*/Domain/*` class may depend on `Symfony\` or
+    `Doctrine\`, attributes included (no `#[ORM\...]` or `#[Assert\...]` in Domain).
+  Don't weaken a rule or add skip_violations to make a check pass.
+- `make rector` (dry-run) / `make rector-fix`: Rector with PHP 8.4 and Symfony
+  sets. Not part of `make check`; apply only as a separate change a human asked for.
 
 ## Discover, don't guess
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Shared\Infrastructure\Dto;
 
 class HealthCheckDto
@@ -15,6 +17,9 @@ class HealthCheckDto
     ) {
     }
 
+    /**
+     * @return array{status: string, checks: array{postgres: string, redis: string, rabbitmq: string}}
+     */
     public function toArray(): array
     {
         return [

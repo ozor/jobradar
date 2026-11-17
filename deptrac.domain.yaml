@@ -1,0 +1,21 @@
+# Rule (b): the Domain layer of any context (including Shared) does not depend
+# on Symfony or Doctrine. Attributes such as #[ORM\Entity] or #[Assert\...] count
+# as dependencies too. Other classes are not assigned to layers here, so this
+# rule does not restrict them (see deptrac.contexts.yaml for that).
+deptrac:
+  paths:
+    - ./src
+
+  layers:
+    - name: Domain
+      collectors:
+        - { type: directory, value: src/.+/Domain/.* }
+    - name: Symfony
+      collectors:
+        - { type: classNameRegex, value: '#^Symfony\\#' }
+    - name: Doctrine
+      collectors:
+        - { type: classNameRegex, value: '#^Doctrine\\#' }
+
+  ruleset:
+    Domain: ~
