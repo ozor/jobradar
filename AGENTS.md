@@ -62,7 +62,7 @@ Three specifics worth spelling out, because they are easy to get wrong:
 
 ## Everyday workflow
 
-- - Everything runs in Docker. Start the stack with `docker compose up -d --wait`.
+- Everything runs in Docker. Start the stack with `docker compose up -d --wait`.
   Run commands inside the php container: `docker compose exec php bin/console ...`,
   `docker compose exec php composer ...`. Never use `symfony serve`, the Symfony CLI
   or a local PHP binary.
