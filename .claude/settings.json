@@ -1,11 +1,26 @@
 {
-  "permissions": {
-    "deny": [
-      "Read(./.env.local)",
-      "Read(./.env.*.local)",
-      "Read(./config/secrets/**)",
-      "Edit(./.idea/**)",
-      "Bash(git push:*)"
-    ]
-  }
+    "permissions": {
+        "allow": [
+            "Bash(make check)",
+            "Bash(make test:*)",
+            "Bash(make stan)",
+            "Bash(make cs)",
+            "Bash(make cs-fix)",
+            "Bash(make deptrac)",
+            "Bash(make rector)",
+            "Bash(git status)",
+            "Bash(git diff:*)",
+            "Bash(git log:*)",
+            "Bash(gh pr view:*)",
+            "Bash(gh pr checks:*)",
+            "Bash(gh run view:*)"
+        ],
+        "deny": [
+            "Read(./.env.local)",
+            "Read(./.env.*.local)",
+            "Read(./config/secrets/**)",
+            "Edit(./.idea/**)",
+            "Bash(git push:*)"
+        ]
+    }
 }

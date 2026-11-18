@@ -97,6 +97,9 @@ start the stack first with `make up`.
   - `tests/Functional`: `WebTestCase`, HTTP requests through the kernel.
   Mirror the `src/` path, e.g. `src/Shared/UI/Http/HealthController.php` is tested in
   `tests/Functional/Shared/UI/Http/HealthControllerTest.php`.
+- CI runs `make check` on every pull request to `master`.
+  A pull request is mergeable only when the `check` job is green.
+- Run `make check` locally before saying a task is done.
 
 A feature isn't done until it has a test that exercises it the way a caller would,
 an HTTP request for a controller or a service call for a service, not just
@@ -136,3 +139,7 @@ things up in the project instead of relying on memory:
 - Read the installed source and docblocks under `vendor/`.
 - Docs: https://symfony.com/doc/current/ (switch to the version matching
   `composer.json` if it differs).
+
+## Git
+- The base branch is `master`. Pull requests always target `master`.
+- Never push; the human pushes and merges.
