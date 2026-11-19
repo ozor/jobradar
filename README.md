@@ -4,7 +4,7 @@ Job aggregator and matcher for PHP/Symfony roles, built as a hands-on project in
 
 JobRadar collects vacancies from public job board APIs, uses an LLM to extract structured attributes (tech stack, seniority, remote policy, allowed countries and time zones, salary, relocation) and ranks vacancies against a candidate profile.
 
-> **Status:** early setup (Module 0). Nothing is runnable yet — see [Roadmap](#roadmap).
+> **Status:** Module 0 complete: the Docker stack runs and `make check` passes. No product features yet — see [Roadmap](#roadmap).
 
 ## Why this project exists
 
@@ -28,12 +28,12 @@ A modular monolith with four bounded contexts that communicate only through asyn
 | Matching | Rule-based scoring plus semantic similarity, match explanation |
 | Delivery | REST API, daily digest, MCP server for AI agents |
 
-Details will live in `docs/architecture.md`.
+Context boundaries are enforced by Deptrac (`deptrac.contexts.yaml`, `deptrac.domain.yaml`). Details will live in `docs/architecture.md`.
 
 ## Tech stack
 
-- PHP 8.4, Symfony, Doctrine ORM
-- PostgreSQL with pgvector, Redis
+- PHP 8.4, Symfony 8.1, Doctrine ORM
+- PostgreSQL 17 with pgvector, Redis
 - Symfony Messenger with RabbitMQ, Symfony Scheduler
 - Symfony AI (Platform, Agent, Store), MCP PHP SDK
 - PHPUnit, PHPStan (max level), PHP-CS-Fixer, Rector, Deptrac, Infection
@@ -41,26 +41,28 @@ Details will live in `docs/architecture.md`.
 
 ## Getting started
 
-> Available once Module 0 is complete.
+Requires Docker with Compose and GNU make.
 
 ```bash
-git clone https://github.com/<your-username>/jobradar.git
+git clone https://github.com/ozor/jobradar.git
 cd jobradar
-make up      # start the Docker stack
+make up      # start the Docker stack and install Composer dependencies
 make check   # code style, static analysis, architecture rules, tests
 ```
+
+The app is served on http://localhost:28080 (`NGINX_PORT` in `.env`); `GET /health` checks PostgreSQL, Redis and RabbitMQ.
 
 ## How AI agents work in this repository
 
 | Path | Purpose |
 | --- | --- |
 | `AGENTS.md` | Shared instructions for all coding agents |
-| `CLAUDE.md` | Claude Code specifics; imports `AGENTS.md` |
-| `specs/` | Feature specifications, implementation plans, task lists |
+| `CLAUDE.md` | Claude Code specifics; imports `AGENTS.md` (from Module 1) |
+| `.claude/settings.json` | Claude Code permissions: allowed commands, denied secrets and `git push` |
+| `specs/` | Feature specifications, implementation plans, task lists (from Module 2) |
 | `docs/adr/` | Architecture Decision Records |
-| `docs/ai-log/` | Work log: what agents did, where they failed, which rules or checks changed as a result |
 
-Every change goes through a pull request into `master`. Merging is always a human decision.
+Every change goes through a pull request into `master`, and the CI job `check` must be green. Merging is always a human decision.
 
 ## Roadmap
 
@@ -72,5 +74,3 @@ Every change goes through a pull request into `master`. Merging is always a huma
 ## Data sources
 
 Vacancies come from public job board APIs such as [Arbeitnow](https://arbeitnow.com/blog/job-board-api/) and [Remotive](https://remotive.com/remote-jobs/api). Every listing links back to its original posting, and each source's terms of use (attribution, request limits) are part of the feature specification.
-
-Status: Module 0 in progress
