@@ -62,7 +62,7 @@ Three specifics worth spelling out, because they are easy to get wrong:
 
 ## Everyday workflow
 
-- Everything runs in Docker. Start the stack with `docker compose up -d --wait`.
+- Everything runs in Docker. Start the stack with make up (it also runs composer install).
   Run commands inside the php container: `docker compose exec php bin/console ...`,
   `docker compose exec php composer ...`. Never use `symfony serve`, the Symfony CLI
   or a local PHP binary.
@@ -84,7 +84,7 @@ Three specifics worth spelling out, because they are easy to get wrong:
 ## Testing
 
 Run everything through the Makefile (it wraps `docker compose exec -T php`);
-start the stack first with `make up`.
+start the stack first with `make up`. After pulling a changed composer.lock, run make install.
 
 - `make test` runs PHPUnit. Pass extra arguments with `ARGS`:
   `make test ARGS="--testsuite Functional"`, `make test ARGS="--filter HealthControllerTest"`.
