@@ -4,7 +4,7 @@ Job aggregator and matcher for PHP/Symfony roles, built as a hands-on project in
 
 JobRadar collects vacancies from public job board APIs, uses an LLM to extract structured attributes (tech stack, seniority, remote policy, allowed countries and time zones, salary, relocation) and ranks vacancies against a candidate profile.
 
-> **Status:** Module 0 complete: the Docker stack runs and `make check` passes. No product features yet — see [Roadmap](#roadmap).
+> **Status:** Module 0 complete: the Docker stack runs and `make check` passes. No product features yet.
 
 ## Why this project exists
 
@@ -13,7 +13,7 @@ The goal is not only the product but the process: a full AI-assisted SDLC in whi
 - specs before code (spec-driven development);
 - implementation plans reviewed by a human before any code is written;
 - tests as executable acceptance criteria for agents;
-- deterministic quality gates — static analysis, architecture rules, mutation testing — instead of trusting model output;
+- deterministic quality gates: static analysis, architecture rules, mutation testing instead of trusting model output;
 - AI and human code review on every pull request;
 - architecture decision records and an AI work log with real metrics.
 
@@ -66,10 +66,10 @@ Every change goes through a pull request into `master`, and the CI job `check` m
 
 ## Roadmap
 
-- [ ] **Phase A — Foundation:** environment, quality toolchain, context engineering for agents
-- [ ] **Phase B — Feature cycle:** spec-driven development, TDD with agents, quality gates, AI code review in CI
-- [ ] **Phase C — Scale:** agents in legacy code, reliability and failure handling, skills, subagents and MCP, issue-to-PR delegation
-- [ ] **Phase D — AI in the product:** LLM enrichment, evals, MCP server, v1.0 release
+- [ ] **Phase A - Foundation:** environment, quality toolchain, context engineering for agents
+- [ ] **Phase B - Feature cycle:** spec-driven development, TDD with agents, quality gates, AI code review in CI
+- [ ] **Phase C - Scale:** agents in legacy code, reliability and failure handling, skills, subagents and MCP, issue-to-PR delegation
+- [ ] **Phase D - AI in the product:** LLM enrichment, evals, MCP server, v1.0 release
 
 ## Data sources
 
