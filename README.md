@@ -4,7 +4,7 @@ Job aggregator and matcher for PHP/Symfony roles, built as a hands-on project in
 
 JobRadar collects vacancies from public job board APIs, uses an LLM to extract structured attributes (tech stack, seniority, remote policy, allowed countries and time zones, salary, relocation) and ranks vacancies against a candidate profile.
 
-> **Status:** Module 0 complete: the Docker stack runs and `make check` passes. No product features yet.
+> **Status:** early development. The Docker stack, quality gates and architecture decisions are in place; product features start in Phase B.
 
 ## Why this project exists
 
@@ -28,7 +28,7 @@ A modular monolith with four bounded contexts that communicate only through asyn
 | Matching | Rule-based scoring plus semantic similarity, match explanation |
 | Delivery | REST API, daily digest, MCP server for AI agents |
 
-Context boundaries are enforced by Deptrac (`deptrac.contexts.yaml`, `deptrac.domain.yaml`). Details will live in `docs/architecture.md`.
+Context boundaries are enforced by Deptrac (`deptrac.contexts.yaml`, `deptrac.domain.yaml`). Details: [docs/architecture.md](docs/architecture.md).
 
 ## Tech stack
 

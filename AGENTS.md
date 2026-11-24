@@ -1,145 +1,149 @@
-# AGENTS.md
+# AGENTS.md: JobRadar
 
-This is a Symfony project. Check `composer.json` for the exact Symfony/PHP version
-in use, and read `symfony.lock` to see which recipes ran. Don't assume Doctrine,
-Twig, API Platform, Messenger, or Lock are installed unless one of those says so.
+JobRadar imports vacancies from public job board APIs, extracts structured
+attributes with an LLM and scores vacancies against a candidate profile.
+PHP 8.4, Symfony 8.1, Doctrine ORM, PostgreSQL 17 with pgvector, Redis,
+RabbitMQ via Symfony Messenger.
 
-## Ask before generating
+- Design: `docs/architecture.md` (contexts, layers, data flow, open questions).
+- Reasons: `docs/adr/`. Don't undo a decision recorded in an ADR. If a task
+  seems to need that, stop and ask.
+- Open questions in `docs/architecture.md` are not decided. If a task depends
+  on one, stop and ask instead of choosing.
 
-If the task doesn't specify, ask rather than guess:
+## Commands
 
-- Persistence: Doctrine ORM, Doctrine ODM, or none?
-- Interface: server-rendered (Twig), API (Serializer, maybe API Platform), or both?
-- Auth: SecurityBundle, and which authenticator?
+Everything runs in Docker. Never use a local PHP binary, the Symfony CLI or
+`symfony serve`.
 
-If you can't ask (no interactive channel), state the assumption you're making and
-pick the smallest option (e.g. no persistence layer) rather than scaffolding a
-full stack nobody asked for.
+- `make up`: start the stack and install Composer dependencies.
+- `make install`: after pulling a changed `composer.lock`.
+- `make check`: `cs`, `stan`, `deptrac`, `test` in that order; stops at the
+  first failure. Must be green before you report a task as done.
+- `make test ARGS="--filter HealthControllerTest"` or
+  `make test ARGS="--testsuite Unit"`: a subset of tests.
+- `make cs-fix`: fix code style. Don't format by hand.
+- Console and Composer: `docker compose exec php bin/console ...`,
+  `docker compose exec php composer ...`.
+- HTTP goes through nginx on the host port `NGINX_PORT` from `.env`.
+- When something fails at runtime, read `var/log/dev.log`.
 
-## Adding features: Flex, not hand-wiring
+## Where code goes
 
-- Never add, remove or upgrade composer dependencies unless the task explicitly asks for it.
-- Before hand-writing infrastructure (locks, queues, caches, HTTP clients, schedulers),
-  check whether a Symfony component covers it. If it does and it isn't installed,
-  propose it in the plan and wait for approval instead of installing it.
-- When a package is approved, install it with
-  `docker compose exec php composer require <package>` and let the Flex recipe
-  register the bundle and generate its config. Don't hand-edit `config/bundles.php`.
+- Bounded contexts: `src/Ingestion`, `src/Enrichment`, `src/Matching`,
+  `src/Delivery`, each split into `Domain`, `Application`, `Infrastructure`,
+  `UI`. What each layer may contain and depend on: `docs/architecture.md`.
+- Contexts never use each other's classes or tables. They talk only through
+  message classes in `src/Shared/Contract`. Framework-free primitives shared
+  by several contexts go to `src/Shared/Kernel`.
+- A value object used by one context lives in that context's `Domain`. It
+  moves to `src/Shared/Kernel` only when a message in `Shared/Contract`
+  carries it.
+- Domain is plain PHP: no Symfony and no Doctrine classes, attributes
+  included. Doctrine mapping lives in Infrastructure.
+- `src/Kernel.php`, `src/Schedule.php`, `src/Shared/Infrastructure` and
+  `src/Shared/UI` are platform code. Contexts must not depend on them.
+- `src/Controller`, `src/Entity`, `src/Repository` and the Doctrine mapping
+  of `src/Entity` are skeleton leftovers. Put nothing there.
+- Each context owns one PostgreSQL schema. No queries and no foreign keys
+  across schemas; refer to another context's data by ID.
 
-## Conventions
+## Conventions the tools don't check yet
 
-Follow https://symfony.com/doc/current/best_practices.html to write idiomatic
-Symfony:
+- Global functions and constants are fully qualified: `\sprintf()`,
+  `\count()`, `\JSON_THROW_ON_ERROR`.
+- Value objects and DTOs are `final readonly` with constructor promotion.
+  Existing classes in `src/Shared` are not final yet; don't copy that.
+- Money and salaries: `Brick\Money\Money` for amounts with a currency,
+  `Brick\Math\BigDecimal` for other decimals. Never `float`.
+- Time: inject `Psr\Clock\ClockInterface`. No argument-less
+  `new \DateTimeImmutable()` in Domain or Application.
+- A value object checks its invariants in the constructor and throws.
+  Symfony Validator is for input at the UI boundary, never in Domain.
+- Message handlers are idempotent: the same message delivered twice creates
+  no duplicates and repeats no side effects (ADR 0003). Every handler has a
+  redelivery test.
+- A message carries the vacancy ID plus only the fields its spec names.
+- Every network client (HTTP, database, Redis, AMQP, LLM) sets explicit
+  connect and read timeouts.
+- Symfony: attributes for routes, commands, message handlers and listeners;
+  autowiring first, then `#[Autowire]` or `#[Target]`; a YAML service
+  definition is the last resort. Controllers are thin and call Application.
+- Before hand-writing infrastructure (locks, caches, rate limits, HTTP
+  clients, schedules), check for a Symfony component. If it isn't installed,
+  propose it in the plan and wait.
 
-- Use PHP attributes for framework metadata, and not only on controllers:
-  `#[Route]`, `#[MapRequestPayload]`, `#[IsGranted]` on actions, `#[Assert\...]`
-  on properties, `#[AsCommand]`, `#[AsEventListener]`, `#[AsMessageHandler]`, and
-  `#[AsAlias]` / `#[AsTaggedItem]` / `#[Autoconfigure]` on services. No YAML or
-  XML routing.
-- Rely on autowiring and autoconfiguration. Type-hint constructor arguments and
-  let the container resolve them. Where a type-hint can't express it, stay in the
-  class with `#[Autowire]` (parameters, env vars, expressions) or `#[Target]` (one
-  of several implementations of an interface). A YAML service definition is the
-  last resort, not the first.
-- Controllers extend `AbstractController`, stay thin, and delegate to services.
-- Use the framework for what it already does: Form for server-rendered forms,
-  Validator for validation, Serializer for JSON, Messenger for async work,
-  Security (voters, authenticators) for access control, Twig `path()`/`url()`
-  instead of hardcoded URLs.
-- Before hand-writing infrastructure (locks, queues, caches, HTTP clients,
-  mailers, schedulers) or reaching for a third-party library, check whether a
-  Symfony component covers it. It usually does.
+## Database
 
-Three specifics worth spelling out, because they are easy to get wrong:
+- Schema changes go through Doctrine migrations:
+  `docker compose exec php bin/console doctrine:migrations:diff`, review the
+  generated SQL, then `doctrine:migrations:migrate`. `make test` migrates the
+  test database itself.
+- Never `doctrine:schema:update`. Never edit a migration that is on
+  `master`: add a new one.
 
-- Bind request data with `#[MapRequestPayload]` / `#[MapQueryString]` on action
-  arguments, which wires up Serializer and Validator for you, instead of calling
-  `json_decode()` or `SerializerInterface` by hand. 
-  If they aren’t installed, propose them in the plan.
-- Use constructor property promotion, and `readonly` for DTOs and value objects.
-- Use `symfony/lock` (`LockFactory`) for mutual exclusion (propose it if not installed). 
-  A hand-built flag or lock file looks fine in review and is usually wrong under concurrency.
+## Tests
 
-## Everyday workflow
-
-- Everything runs in Docker. Start the stack with make up (it also runs composer install).
-  Run commands inside the php container: `docker compose exec php bin/console ...`,
-  `docker compose exec php composer ...`. Never use `symfony serve`, the Symfony CLI
-  or a local PHP binary.
-- HTTP is served by nginx; the host port comes from `NGINX_PORT` in `.env`.
-- When something fails, read `var/log/dev.log`.
-- If `maker-bundle` is installed, prefer `docker compose exec php bin/console make:*` with every argument
-  passed up front and `--no-interaction` where supported: makers prompt on a
-  terminal by default, which hangs a non-interactive shell. If a maker still
-  needs interactive input, hand-write the code instead.
-- If Doctrine ORM is installed, schema changes go through migrations
-  (`docker compose exec php bin/console make:migration`, 
-  then `docker compose exec php bin/console doctrine:migrations:migrate`), never
-  `docker compose exec php bin/console doctrine:schema:update` or hand-written SQL.
-- `.env` is committed and holds defaults only. Real secrets belong in `.env.local`
-  (git-ignored) or the secrets vault (`docker compose exec php bin/console secrets:set`), read via
-  `%env(...)%`.
-- Do not add composer dependencies unless the task explicitly asks for one.
-
-## Testing
-
-Run everything through the Makefile (it wraps `docker compose exec -T php`);
-start the stack first with `make up`. After pulling a changed composer.lock, run make install.
-
-- `make test` runs PHPUnit. Pass extra arguments with `ARGS`:
-  `make test ARGS="--testsuite Functional"`, `make test ARGS="--filter HealthControllerTest"`.
-- `make test` first runs `make test-db`, which creates the `jobradar_test`
-  database if it is missing and applies migrations to it. Don't create it by hand.
-- Tests run against the real Postgres, Redis and RabbitMQ from `compose.yaml`.
-- Layout (one testsuite each in `phpunit.xml.dist`):
-  - `tests/Unit`: plain `TestCase`, no kernel, no I/O.
-  - `tests/Integration`: `KernelTestCase`, real services from the container.
+- Suites in `phpunit.xml.dist`:
+  - `tests/Unit`: plain `TestCase`, no kernel, no I/O. Domain is tested here.
+  - `tests/Integration`: `KernelTestCase` with real services.
   - `tests/Functional`: `WebTestCase`, HTTP requests through the kernel.
-  Mirror the `src/` path, e.g. `src/Shared/UI/Http/HealthController.php` is tested in
-  `tests/Functional/Shared/UI/Http/HealthControllerTest.php`.
-- CI runs `make check` on every pull request to `master`.
-  A pull request is mergeable only when the `check` job is green.
-- Run `make check` locally before saying a task is done.
+- Mirror the `src/` path: `src/Shared/UI/Http/HealthController.php` is
+  tested in `tests/Functional/Shared/UI/Http/HealthControllerTest.php`.
+- Tests run against the real PostgreSQL, Redis and RabbitMQ from
+  `compose.yaml`. `make test` creates `jobradar_test` if it is missing;
+  don't create it by hand.
+- Test behaviour the way a caller sees it: an HTTP request for a controller,
+  a method call for a service, a dispatched message for a handler.
+- Don't change or delete an existing test to make it pass. If a test looks
+  wrong, stop and ask.
 
-A feature isn't done until it has a test that exercises it the way a caller would,
-an HTTP request for a controller or a service call for a service, not just
-"it didn't throw."
+## Quality gates
 
-## Code style and quality gates
+- Never weaken a check to get green: no `@phpstan-ignore`, no baseline, no
+  `skip_violations`, no loosened Deptrac rule or tool config. Fix the code.
+  If the fix changes behaviour, stop and ask.
+- PHPStan runs at level `max` with strict rules: write exact types and array
+  shapes from the start.
+- Rector is not part of `make check`. Run `make rector-fix` only when asked,
+  as a separate change.
 
-`make check` runs `cs`, `stan`, `deptrac` and `test` in that order, stops at the
-first failure, and must pass before every PR (budget: under 60 seconds).
+## Boundaries
 
-- `make cs` / `make cs-fix`: PHP-CS-Fixer with `@PER-CS` + `@Symfony` and
-  `declare(strict_types=1)` required in every PHP file. Global classes, functions
-  and constants are written fully qualified (`\Throwable`, `\sprintf`), not imported.
-- `make stan`: PHPStan at level `max` with strict-rules and the Symfony and
-  Doctrine extensions. There is no baseline and `@phpstan-ignore` is not allowed:
-  fix the code. If the fix would change behaviour, stop and ask.
-- `make deptrac`: architecture rules, two configs:
-  - `deptrac.contexts.yaml`: Ingestion, Enrichment, Matching and Delivery must not
-    depend on each other, only on `Shared/Contract` and `Shared/Kernel`.
-  - `deptrac.domain.yaml`: no `*/Domain/*` class may depend on `Symfony\` or
-    `Doctrine\`, attributes included (no `#[ORM\...]` or `#[Assert\...]` in Domain).
-  Don't weaken a rule or add skip_violations to make a check pass.
-- `make rector` (dry-run) / `make rector-fix`: Rector with PHP 8.4 and Symfony
-  sets. Not part of `make check`; apply only as a separate change a human asked for.
+- Composer dependencies: add, remove or upgrade only when the task names the
+  package. Install with `docker compose exec php composer require <package>`
+  and let the Flex recipe write the config; don't edit `config/bundles.php`.
+- `.env` holds committed defaults only. Never read or write `.env.local`,
+  `.env.*.local` or `config/secrets/`.
+- `.env` is the single source of configuration: don't copy its values into
+  `environment:` of the `php` service. A changed `POSTGRES_*` takes effect
+  only on a recreated volume, so ask before changing them.
+- Published ports in `compose.yaml` bind to `127.0.0.1` (ADR 0006).
+- Change `compose.yaml`, `docker/`, `Makefile`, CI and tool configs only when
+  the task is about them.
 
-## Discover, don't guess
+## Look it up, don't guess
 
-Framework APIs change between versions and your training data may be stale. Look
-things up in the project instead of relying on memory:
+Framework APIs change between versions. Check the installed code, not memory:
 
-- `docker compose exec php bin/console about`: versions, environment, paths.
-- `docker compose exec php bin/console debug:router`, `debug:container`, `debug:autowiring <name>`,
-  `debug:config <bundle>`, `config:dump-reference <bundle>`: what exists and how
-  it is configured.
-- `docker compose exec php bin/console lint:container`, plus `lint:twig templates/` and
-  `lint:yaml config/` where those packages are installed: validate before running.
-- Read the installed source and docblocks under `vendor/`.
-- Docs: https://symfony.com/doc/current/ (switch to the version matching
-  `composer.json` if it differs).
+- `bin/console about`, `debug:router`, `debug:container`,
+  `debug:autowiring <name>`, `debug:config <bundle>`,
+  `config:dump-reference <bundle>`, `lint:container`.
+- Source and docblocks under `vendor/`; https://symfony.com/doc/current/
+  (match the version in `composer.json`).
+- Versions of Docker images, GitHub Actions and packages come from their
+  registry or release page, not from memory. Name the source in the plan.
+
+## Definition of Done
+
+1. `make check` is green.
+2. New behaviour has a test that fails without it.
+3. The final message says what was done, what wasn't, and which assumptions
+   you made.
 
 ## Git
-- The base branch is `master`. Pull requests always target `master`.
-- Never push; the human pushes and merges.
+
+- Branch from `master`; pull requests target `master`.
+- Conventional Commits: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`,
+  `build:`, `ci:`, `chore:`.
+- Never push or merge. A human pushes, opens the pull request and merges.
