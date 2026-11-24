@@ -4,7 +4,7 @@ Job aggregator and matcher for PHP/Symfony roles, built as a hands-on project in
 
 JobRadar collects vacancies from public job board APIs, uses an LLM to extract structured attributes (tech stack, seniority, remote policy, allowed countries and time zones, salary, relocation) and ranks vacancies against a candidate profile.
 
-> **Status:** Module 0 complete: the Docker stack runs and `make check` passes. No product features yet.
+> **Status:** early development. The Docker stack, quality gates and architecture decisions are in place; product features start in Phase B.
 
 ## Why this project exists
 
