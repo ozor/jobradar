@@ -28,7 +28,7 @@ A modular monolith with four bounded contexts that communicate only through asyn
 | Matching | Rule-based scoring plus semantic similarity, match explanation |
 | Delivery | REST API, daily digest, MCP server for AI agents |
 
-Context boundaries are enforced by Deptrac (`deptrac.contexts.yaml`, `deptrac.domain.yaml`). Details will live in `docs/architecture.md`.
+Context boundaries are enforced by Deptrac (`deptrac.contexts.yaml`, `deptrac.domain.yaml`). Details: [docs/architecture.md](docs/architecture.md).
 
 ## Tech stack
 
